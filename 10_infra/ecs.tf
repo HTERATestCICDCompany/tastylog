@@ -51,6 +51,20 @@ resource "aws_ecs_service" "webapp" {
 }
 
 # ---------------------------------------------
+# CloudWatch Logs Group
+# ---------------------------------------------
+resource "aws_cloudwatch_log_group" "webapp" {
+  name              = "/ecs/tastylog-dev-webapp-template"
+  retention_in_days = 14
+
+  tags = {
+    Name    = "${var.project}-${var.environment}-webapp-logs"
+    Project = var.project
+    Env     = var.environment
+  }
+}
+
+# ---------------------------------------------
 # Elastic Container Service - Task
 # ---------------------------------------------
 resource "aws_ecs_task_definition" "webapp" {
@@ -66,7 +80,7 @@ resource "aws_ecs_task_definition" "webapp" {
     cpu_architecture        = "X86_64"
   }
 
-  execution_role_arn = aws_iam_role.ecs_task_exec_iam_role.arn
+  execution_role_arn = "arn:aws:iam::229586729911:role/tastylog-dev-ecs-task-exec-iam-role"
 
   container_definitions = jsonencode([
     {
@@ -81,28 +95,36 @@ resource "aws_ecs_task_definition" "webapp" {
           hostPort      = 3000
         }
       ]
-      secrets = [
+      environment = [
         {
-          name      = "MYSQL_HOST"
-          valueFrom = "${aws_ssm_parameter.host.arn}"
+          name  = "MYSQL_HOST"
+          value = "tastylog-dev-mysql-standalone.cvgqpzgylaz0.ap-northeast-1.rds.amazonaws.com"
         },
         {
-          name      = "MYSQL_PORT"
-          valueFrom = "${aws_ssm_parameter.port.arn}"
+          name  = "MYSQL_PORT"
+          value = "3306"
         },
         {
-          name      = "MYSQL_DATABASE"
-          valueFrom = "${aws_ssm_parameter.database.arn}"
+          name  = "MYSQL_DATABASE"
+          value = "tastylog"
         },
         {
-          name      = "MYSQL_USERNAME"
-          valueFrom = "${aws_ssm_parameter.username.arn}"
+          name  = "MYSQL_USERNAME"
+          value = "admin"
         },
         {
-          name      = "MYSQL_PASSWORD"
-          valueFrom = "${aws_ssm_parameter.password.arn}"
+          name  = "MYSQL_PASSWORD"
+          value = "password"
         }
       ]
+      logConfiguration = {
+        logDriver = "awslogs"
+        options = {
+          "awslogs-group"         = "/ecs/tastylog-dev-webapp-template"
+          "awslogs-region"        = "ap-northeast-1"
+          "awslogs-stream-prefix" = "ecs"
+        }
+      }
     }
   ])
 

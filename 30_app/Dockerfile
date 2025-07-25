@@ -1,5 +1,8 @@
 FROM node:16-alpine
 
+# bcryptのビルドに必要な依存関係をインストール
+RUN apk add --no-cache python3 make g++
+
 COPY . /home/node/webapp
 
 RUN cd /home/node/webapp; \
@@ -7,11 +10,7 @@ RUN cd /home/node/webapp; \
     chmod +x /usr/local/bin/docker-entrypoint.sh; \
     npm install;
 
-ENV MYSQL_HOST="127.0.0.1"
-ENV MYSQL_PORT="3306"
-ENV MYSQL_USERNAME="YOUR-MYSQL-USERNAME"
-ENV MYSQL_PASSWORD="YOUR-MYSQL-PASSWORD"
-ENV MYSQL_DATABASE="tastylog"
+# MySQL環境変数はECSタスク定義のSSMパラメータから設定される
 
 EXPOSE 3000
 
